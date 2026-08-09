@@ -735,7 +735,7 @@ app.use(async (req, res, next) => {
     if(req.cookies?.honoka) {
         if(!req.session?.loginUser) {
             const token = await AutoLoginToken.findOne({
-                token: req.cookies.honoka
+                token: req.cookies.honoka.toString()
             });
             if(token) req.session.loginUser = token.uuid;
             else res.clearCookie('honoka');
