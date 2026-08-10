@@ -741,7 +741,7 @@ let Store = {
     commentNumbers: [],
     categories: [],
     includes: [],
-    includeParams: Object.create(null),
+    includeParams: {},
     heading: {
         sectionNum: 0,
         lowestLevel: 6,
@@ -1566,8 +1566,8 @@ class NamumarkParser extends EmbeddedActionsParser {
                     Store.includes.push(docName);
                     data.topParagraph = false;
                     data.includeData = parseIncludeParams(splittedParams);
-                    const arr = Store.includeParams[docName] ??= [];
-                    arr.push(data.includeData);
+                    if(!Object.hasOwn(Store.includeParams, docName)) Store.includeParams[docName] = [];
+                    Store.includeParams[docName].push(data.includeData);
                 }
                 // else if(name === 'footnote' || name === '각주') {
                 //     data.footnoteValues = [...Store.footnote.values];
@@ -1596,8 +1596,8 @@ class NamumarkParser extends EmbeddedActionsParser {
                 const docName = tok.payload.splittedParams[0];
                 Store.includes.push(docName);
                 includeData = parseIncludeParams(tok.payload.splittedParams);
-                const arr = Store.includeParams[docName] ??= [];
-                arr.push(includeData);
+                if(!Object.hasOwn(Store.includeParams, docName)) Store.includeParams[docName] = [];
+                Store.includeParams[docName].push(includeData);
             });
 
             return {
