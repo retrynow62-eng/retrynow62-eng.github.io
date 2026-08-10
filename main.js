@@ -732,10 +732,10 @@ app.use(sessionMiddleware);
 SocketIO.engine.use(onlyForHandshake(sessionMiddleware));
 
 app.use(async (req, res, next) => {
-    if(req.cookies?.honoka) {
+    if(typeof req.cookies?.honoka === 'string') {
         if(!req.session?.loginUser) {
             const token = await AutoLoginToken.findOne({
-                token: req.cookies.honoka.toString()
+                token: req.cookies.honoka
             });
             if(token) req.session.loginUser = token.uuid;
             else res.clearCookie('honoka');
