@@ -741,7 +741,7 @@ let Store = {
     commentNumbers: [],
     categories: [],
     includes: [],
-    includeParams: {},
+    includeParams: Object.create(null),
     heading: {
         sectionNum: 0,
         lowestLevel: 6,
