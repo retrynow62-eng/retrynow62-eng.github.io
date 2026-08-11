@@ -983,9 +983,9 @@ app.delete('/member/login/oauth2/:provider', middleware.isLogin, async (req, res
 });
 
 app.get('/member/logout', middleware.isLogin, async (req, res) => {
-    await AutoLoginToken.deleteOne({
+    if(typeof req.cookies.honoka === 'string') await AutoLoginToken.deleteOne({
         uuid: req.user.uuid,
-        token: req.cookies.honoka.toString()
+        token: req.cookies.honoka
     });
     delete req.session.loginUser;
     req.session.fullReload = true;
