@@ -53,7 +53,7 @@ const PushSubscription = require('../schemas/pushSubscription');
 
 const app = express.Router();
 
-app.get('/member/signup', middleware.isLogout, middleware.checkCaptcha(true), (req, res) => {
+app.get('/member/signup', middleware.checkCaptcha(true), (req, res) => {
     if(config.disable_signup || config.disable_internal_login) return res.error(req.t('routes.member.errors.signup_disabled'));
 
     res.renderSkin('signup', {
@@ -179,7 +179,6 @@ ${req.t('routes.member.email.contents.request_ip')} : ${req.ip}
 }
 
 app.post('/member/signup',
-    middleware.isLogout,
     body('email')
         .notEmpty().withMessage('routes.member.errors.email_required')
         .isEmail().withMessage('routes.member.errors.invalid_email')
@@ -426,7 +425,7 @@ app.post('/member/signup/:token',
     }
 });
 
-app.get('/member/login', middleware.isLogout, middleware.checkCaptcha(true), async (req, res) => {
+app.get('/member/login', middleware.checkCaptcha(true), async (req, res) => {
     if(!req.query.redirect && req.referer) {
         const url = new URL(req.url, config.base_url);
         url.searchParams.set('redirect', req.referer.pathname + req.referer.search);
@@ -458,7 +457,6 @@ app.get('/member/login', middleware.isLogout, middleware.checkCaptcha(true), asy
 });
 
 app.post('/member/login',
-    middleware.isLogout,
     body('email')
         .if(body('challenge').isEmpty())
         .notEmpty()
@@ -646,7 +644,6 @@ ${req.t('routes.member.email.contents.request_ip')}: ${req.ip}
 });
 
 app.post('/member/login/pin',
-    middleware.isLogout,
     oneOf([
         body('pin')
             .notEmpty()
@@ -987,7 +984,9 @@ app.get('/member/logout', middleware.isLogin, async (req, res) => {
         uuid: req.user.uuid,
         token: req.cookies.honoka
     });
-    delete req.session.loginUser;
+    req.session.allLoginUsers = req.session.allLoginUsers?.filter(a => a !== req.session.loginUser);
+    if(req.session.allLoginUsers.length) req.session.loginUser = req.session.allLoginUsers[0];
+    else delete req.session.loginUser;
     req.session.fullReload = true;
     delete req.session.contributor;
     res.clearCookie('honoka');
@@ -997,6 +996,29 @@ app.get('/member/logout', middleware.isLogin, async (req, res) => {
         if(provider?.end_session_endpoint)
             return res.redirect(provider.end_session_endpoint);
     }
+
+    res.redirect(req.query.redirect || req.get('Referer') || '/');
+});
+
+app.get('/member/switch_account/:uuid',
+    middleware.isLogin,
+    param('uuid')
+        .isUUID(),
+    middleware.singleFieldError,
+    async (req, res) => {
+    if(!req.session.allLoginUsers?.includes(req.params.uuid)) return res.error(req.t('routes.member.errors.invalid_switch_account'));
+
+    const user = await User.findOne({
+        uuid: req.params.uuid
+    });
+    if(!user) {
+        req.session.allLoginUsers = req.session.allLoginUsers.filter(a => a !== req.params.uuid);
+        return res.error(req.t('routes.member.errors.invalid_switch_account'));
+    }
+
+    req.session.loginUser = req.params.uuid;
+    req.session.fullReload = true;
+    delete req.session.contributor;
 
     res.redirect(req.query.redirect || req.get('Referer') || '/');
 });
@@ -1811,7 +1833,7 @@ app.post('/member/deactivate_otp',
     res.redirect('/member/mypage');
 });
 
-app.get('/member/recover_password', middleware.isLogout, middleware.checkCaptcha(true), (req, res) => {
+app.get('/member/recover_password', middleware.checkCaptcha(true), (req, res) => {
     if(!config.use_email_verification) return res.error(req.t('routes.member.errors.email_verification_disabled'));
 
     res.renderSkin('recover_password', {
@@ -1819,7 +1841,7 @@ app.get('/member/recover_password', middleware.isLogout, middleware.checkCaptcha
     });
 });
 
-app.post('/member/recover_password', middleware.isLogout, middleware.captcha(true), async (req, res) => {
+app.post('/member/recover_password', middleware.captcha(true), async (req, res) => {
     if(!config.use_email_verification) return res.error(req.t('routes.member.errors.email_verification_disabled'));
 
     const email = req.body.email;

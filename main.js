@@ -748,6 +748,10 @@ app.use(async (req, res, next) => {
         });
     }
 
+    req.session.allLoginUsers ??= [];
+    if(req.session.loginUser && !req.session.allLoginUsers.includes(req.session.loginUser))
+        req.session.allLoginUsers.push(req.session.loginUser);
+
     next();
 });
 
@@ -979,6 +983,13 @@ app.use(async (req, res, next) => {
             return Math.round(lastThread.lastUpdatedAt.getTime() / 1000);
         })()) || null;
 
+        const otherAccounts = await (async () => {
+            const targetArr = (req.session.allLoginUsers || []).filter(a => a !== req.user.uuid);
+            return targetArr.length ? (await User.find({
+                uuid: { $in: targetArr }
+            }).select('-_id uuid name')) : [];
+        })();
+
         const makeConfigAndSession = () => {
             const sessionMenus = [];
             for(let permMenus of [...plugins.page.map(a => a.menus).filter(a => a), permissionMenus])
@@ -1001,7 +1012,8 @@ app.use(async (req, res, next) => {
                 gravatar_url: req.user?.avatar,
                 user_document_discuss,
                 quick_block: req.permissions.includes('admin'),
-                notifications
+                notifications,
+                otherAccounts
             }
 
             configJSON = {
