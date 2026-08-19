@@ -451,7 +451,8 @@ app.get('/member/login', middleware.checkCaptcha(true), async (req, res) => {
             disableSignup: !!config.disable_signup,
             disableInternal,
             externalProviders,
-            passkeyData
+            passkeyData,
+            noAutoLogin: req.user?.type === UserTypes.Account
         }
     });
 });
@@ -569,7 +570,7 @@ app.post('/member/login',
     if(!email) trusted = true;
 
     if(trusted) {
-        if(req.body.autologin === 'Y') {
+        if(req.body.autologin === 'Y' && req.user?.type !== UserTypes.Account) {
             const token = await AutoLoginToken.create({
                 uuid: user.uuid
             });
@@ -724,7 +725,7 @@ app.post('/member/login/pin',
         req.session.trustedAccounts.push(user.uuid);
     }
 
-    if(req.body.autologin === 'Y') {
+    if(req.body.autologin === 'Y' && req.user?.type !== UserTypes.Account) {
         const token = await AutoLoginToken.create({
             uuid: user.uuid
         });
@@ -944,7 +945,7 @@ app.get('/member/login/oauth2/:provider/callback',
     req.session.loginUser = map.user;
     req.session.oauth2Provider = req.params.provider;
 
-    if(req.session.autologin) {
+    if(req.session.autologin && req.user?.type !== UserTypes.Account) {
         const token = await AutoLoginToken.create({
             uuid: map.user
         });
