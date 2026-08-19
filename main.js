@@ -983,18 +983,18 @@ app.use(async (req, res, next) => {
             return Math.round(lastThread.lastUpdatedAt.getTime() / 1000);
         })()) || null;
 
-        const otherAccounts = await (async () => {
-            const targetArr = (req.session.allLoginUsers || []).filter(a => a !== req.user.uuid);
-            const accounts = targetArr.length ? (await User.find({
-                uuid: { $in: targetArr }
-            }).select('-_id uuid name')) : [];
-            return accounts.map(a => ({
-                ...a,
-                gravatar_url: utils.getGravatar(a.email)
-            }));
-        })();
+        const makeConfigAndSession = async () => {
+            const otherAccounts = await (async () => {
+                const targetArr = (req.session.allLoginUsers || []).filter(a => a !== req.user.uuid);
+                const accounts = targetArr.length ? (await User.find({
+                    uuid: { $in: targetArr }
+                }).select('-_id uuid name email')) : [];
+                return accounts.map(a => ({
+                    ...utils.withoutKeys(a, ['email']),
+                    gravatar_url: utils.getGravatar(a.email)
+                }));
+            })();
 
-        const makeConfigAndSession = () => {
             const sessionMenus = [];
             for(let permMenus of [...plugins.page.map(a => a.menus).filter(a => a), permissionMenus])
                 for(let [key, value] of Object.entries(permMenus)) {
@@ -1055,8 +1055,8 @@ app.use(async (req, res, next) => {
             sessionJSONstr = JSON.stringify(session);
         }
 
-        const getFEBasicData = () => {
-            makeConfigAndSession();
+        const getFEBasicData = async () => {
+            await makeConfigAndSession();
 
             const userConfigHash = req.get('X-You');
             const configHash = crypto.createHash('md5').update(configJSONstr).digest('hex');
@@ -1079,8 +1079,6 @@ app.use(async (req, res, next) => {
         res.renderSkin = (...args) => renderSkin(...args).then();
 
         const renderSkin = async (title, data = {}) => {
-            makeConfigAndSession();
-
             title &&= title.includes(' ') ? title : req.t(`titles.${title}`, { defaultValue: title });
 
             const status = data.status || 200;
@@ -1119,9 +1117,6 @@ app.use(async (req, res, next) => {
                 if(typeof output === 'object') Object.assign(pluginData, output);
             }
 
-            const basicData = getFEBasicData();
-            if(!basicData) return;
-
             const resData = {
                 page: {
                     contentName: data.contentName || null,
@@ -1137,14 +1132,19 @@ app.use(async (req, res, next) => {
                     ...(data.serverData ?? {}),
                     ...pluginData,
                     ...req.additionalServerData
-                },
-                ...basicData
+                }
             }
 
             if(req.isInternal) res.json(resData);
             else {
+                const basicData = await getFEBasicData();
+                if(!basicData) return;
+
                 const render = require(`./skins/${skin}/server/server.cjs`).render;
-                const rendered = await render(req.originalUrl, resData, require(`./skins/${skin}/client/.vite/ssr-manifest.json`), req.i18n);
+                const rendered = await render(req.originalUrl, {
+                    ...resData,
+                    ...basicData
+                }, require(`./skins/${skin}/client/.vite/ssr-manifest.json`), req.i18n);
                 let body = rendered.html;
                 if(rendered.state) {
                     const deflated = await deflate(Buffer.from(msgpack.encode(JSON.parse(JSON.stringify(rendered.state)))));
@@ -1226,7 +1226,7 @@ app.use(async (req, res, next) => {
                 res.jsonProcessing = true;
 
                 (async () => {
-                    const basicData = getFEBasicData();
+                    const basicData = await getFEBasicData();
                     if(!basicData) return;
 
                     const responseData = JSON.parse(JSON.stringify(data));
