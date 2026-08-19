@@ -1024,6 +1024,20 @@ app.get('/member/switch_account/:uuid',
     res.redirect(req.query.redirect || req.get('Referer') || '/');
 });
 
+app.post('/member/logout_other/:uuid',
+    middleware.isLogin,
+    param('uuid')
+        .isUUID(),
+    middleware.singleFieldError,
+    async (req, res) => {
+    if(req.session.loginUser === req.params.uuid
+        || !req.session.allLoginUsers?.includes(req.params.uuid)) return res.error(req.t('routes.member.errors.invalid_switch_account'));
+
+    req.session.allLoginUsers = req.session.allLoginUsers.filter(a => a !== req.params.uuid);
+
+    res.status(204).end();
+});
+
 app.get('/member/mypage', middleware.isLogin, async (req, res) => {
     const passkeys = await Passkey.find({
         user: req.user.uuid
