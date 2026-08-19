@@ -985,9 +985,13 @@ app.use(async (req, res, next) => {
 
         const otherAccounts = await (async () => {
             const targetArr = (req.session.allLoginUsers || []).filter(a => a !== req.user.uuid);
-            return targetArr.length ? (await User.find({
+            const accounts = targetArr.length ? (await User.find({
                 uuid: { $in: targetArr }
             }).select('-_id uuid name')) : [];
+            return accounts.map(a => ({
+                ...a,
+                gravatar_url: utils.getGravatar(a.email)
+            }));
         })();
 
         const makeConfigAndSession = () => {
