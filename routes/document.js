@@ -1795,10 +1795,10 @@ app.get('/blame{/*document}', middleware.parseDocumentName, async (req, res) => 
 
     const rev = await History.findOne({
         document: dbDocument.uuid,
-        uuid: req.query.uuid
-    });
+        ...(req.query.uuid ? { uuid: req.query.uuid } : {})
+    }).sort({ rev: -1 });
 
-    if(!req.query.uuid || !rev) return res.error(req.t('routes.document.errors.invalid_rev'), 404);
+    if(req.query.uuid && !rev) return res.error(req.t('routes.document.errors.invalid_rev'), 404);
 
     if(rev.hidden && !req.permissions.includes('hide_revision')) return res.error(req.t('routes.document.errors.secret_rev'), 403);
 
