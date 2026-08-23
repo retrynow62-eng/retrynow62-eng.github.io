@@ -1216,11 +1216,6 @@ app.get('/contribution/:uuid/document',
         revs = utils.withoutKeys(revs.filter(a => a.document), ['_id']);
     }
 
-    for(let rev of revs) {
-        if(rev.troll || (rev.hideLog && !req.permissions.includes('hide_document_history_log')))
-            delete rev.log;
-    }
-
     res.renderSkin(req.t('titles.user_contribution', { value: user ? `"${namumarkUtils.escapeHtml(user.name || user.ip)}"` : `<${req.t('routes.member.deleted_user')}>` }), {
         viewName: 'contribution',
         contentName: 'userContribution/document',
