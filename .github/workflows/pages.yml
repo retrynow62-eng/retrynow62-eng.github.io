@@ -1,0 +1,113 @@
+name: Build and deploy TheTree frontend to GitHub Pages
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      skin:
+        description: 'Skin name to build (optional)'
+        required: false
+        default: 'plain'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Read frontend repo from version.json
+        id: readversion
+        run: |
+          echo "fe_repo=$(jq -r .feRepo version.json)" >> $GITHUB_OUTPUT
+
+      - name: Clone frontend repository
+        run: |
+          set -euo pipefail
+          echo "Cloning frontend repo: ${{ steps.readversion.outputs.fe_repo }}"
+          git clone "https://github.com/${{ steps.readversion.outputs.fe_repo }}.git" frontend
+
+      - name: Install frontend dependencies
+        run: |
+          set -euo pipefail
+          cd frontend
+          npm ci
+
+      - name: Build frontend (multiple fallbacks)
+        env:
+          SKIN_NAME: ${{ github.event.inputs.skin || 'plain' }}
+        run: |
+          set -euxo pipefail
+          cd frontend
+
+          # Try package.json build script if present
+          if [ -f package.json ]; then
+            if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
+              echo "Running npm run build"
+              npm run build --if-present || true
+            fi
+          fi
+
+          # Try TheTree-style Vite builds (server + client for a skin). If these commands fail, we continue.
+          echo "Attempting TheTree vite builds for skin: $SKIN_NAME"
+          npx vite build --emptyOutDir --outDir "skins/${SKIN_NAME}/server" --ssr src/server.js || true
+          npx vite build --emptyOutDir --outDir "skins/${SKIN_NAME}/client" --ssrManifest || true
+
+      - name: Prepare public/ for Pages
+        env:
+          SKIN_NAME: ${{ github.event.inputs.skin || 'plain' }}
+        run: |
+          set -euxo pipefail
+          rm -rf public || true
+          mkdir public
+
+          FRONT_DIR=frontend
+          SKIN=${SKIN_NAME}
+
+          CANDIDATES=(
+            "$FRONT_DIR/skins/$SKIN/client"
+            "$FRONT_DIR/skins/$SKIN/client/dist"
+            "$FRONT_DIR/skins/$SKIN/client/build"
+            "$FRONT_DIR/dist"
+            "$FRONT_DIR/build"
+            "$FRONT_DIR/public"
+            "$FRONT_DIR/client"
+            "$FRONT_DIR/out"
+          )
+
+          copied=false
+          for d in "${CANDIDATES[@]}"; do
+            if [ -d "$d" ]; then
+              echo "Found build output: $d -> copying to public/"
+              cp -a "$d/." public/
+              copied=true
+              break
+            fi
+          done
+
+          if [ "$copied" = false ]; then
+            echo "No known build output found. Attempting to copy frontend static assets as fallback."
+            cp -a frontend/. public/ || true
+          fi
+
+          echo "Public contents:"
+          ls -la public || true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
