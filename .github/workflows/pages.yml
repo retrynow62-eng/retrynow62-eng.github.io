@@ -1,4 +1,4 @@
-name: Build and deploy TheTree frontend to GitHub Pages
+name: Build and deploy TheTree frontend to GitHub Pages (gh-pages)
 
 on:
   push:
@@ -10,13 +10,14 @@ on:
         required: false
         default: 'plain'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout repo
@@ -51,7 +52,6 @@ jobs:
           set -euxo pipefail
           cd frontend
 
-          # Try package.json build script if present
           if [ -f package.json ]; then
             if jq -e '.scripts.build' package.json >/dev/null 2>&1; then
               echo "Running npm run build"
@@ -59,7 +59,6 @@ jobs:
             fi
           fi
 
-          # Try TheTree-style Vite builds (server + client for a skin). If these commands fail, we continue.
           echo "Attempting TheTree vite builds for skin: $SKIN_NAME"
           npx vite build --emptyOutDir --outDir "skins/${SKIN_NAME}/server" --ssr src/server.js || true
           npx vite build --emptyOutDir --outDir "skins/${SKIN_NAME}/client" --ssrManifest || true
@@ -104,10 +103,10 @@ jobs:
           echo "Public contents:"
           ls -la public || true
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v2
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: public
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v2
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          commit_message: "pages: deploy ${{ github.sha }}"
