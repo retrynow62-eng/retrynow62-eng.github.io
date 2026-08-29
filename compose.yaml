@@ -28,6 +28,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
 
+      SESSION_SECRET: secretkd9ek2d93id93id93id28si2idjw9skeifjrvidjc9d9d9dodjf9vjvidkcdid9eoe9229wimakisidieieisiiiii
       MEILISEARCH_HOST: http://search:7700
       MEILISEARCH_KEY: thetreepass
       MEILISEARCH_INDEX: TheTreeDocuments
