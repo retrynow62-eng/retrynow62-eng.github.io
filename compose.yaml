@@ -21,7 +21,7 @@ services:
       MONGODB_HOST: db
       MONGODB_PORT: 27017
       MONGODB_USER: root
-      MONGODB_PASSWORD: thetreetest
+      MONGODB_PASSWORD: Nyangcat0621?!
       MONGODB_DATABASE: TheTree
 
       USE_REDIS: true
@@ -29,7 +29,7 @@ services:
       REDIS_PORT: 6379
 
       MEILISEARCH_HOST: http://search:7700
-      MEILISEARCH_KEY: thetreetest
+      MEILISEARCH_KEY: thetreepass
       MEILISEARCH_INDEX: TheTreeDocuments
   db:
     image: mongo:latest
@@ -38,7 +38,7 @@ services:
       - db:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: thetreetest
+      MONGO_INITDB_ROOT_PASSWORD: thetreepass
   redis:
     image: redis:latest
     restart: unless-stopped
@@ -50,7 +50,7 @@ services:
     volumes:
       - search:/meili_data
     environment:
-      MEILI_MASTER_KEY: thetreetest
+      MEILI_MASTER_KEY: thetreepass
 
 volumes:
   db:
