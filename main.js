@@ -707,7 +707,8 @@ if(process.env.USE_REDIS === 'true') {
     const client = redis.createClient({
         socket: {
             host: process.env.REDIS_HOST,
-            port: process.env.REDIS_PORT
+            port: process.env.REDIS_PORT,
+            reconnectStrategy: () => 5000
         },
         password: process.env.REDIS_PASSWORD
     });
