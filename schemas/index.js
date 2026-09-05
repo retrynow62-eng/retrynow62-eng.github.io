@@ -21,7 +21,7 @@ module.exports = () => {
     mongoose.connection.on('disconnected', () => {
         if(global.exiting) return;
         console.error('MongoDB disconnected. reconnecting...');
-        connect().then();
+        // connect().then();
     });
 
     console.log('Loading schemas...');
