@@ -1,0 +1,1 @@
+- [Replit runtime constraints](replit-runtime.md) — Node 22 and an alternate country dataset are needed for reliable startup in this environment.
