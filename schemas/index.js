@@ -4,7 +4,8 @@ const fs = require('fs');
 module.exports = () => {
     const connect = async () => {
         try {
-            await mongoose.connect(process.env.MONGODB_URL || `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/admin`, {
+            const configuredUrl = (process.env.MONGODB_CONNECTION_URI || process.env.MONGODB_URL)?.trim().replace(/^(['"])(.*)\1$/, '$2');
+            await mongoose.connect(configuredUrl || `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/admin`, {
                 dbName: process.env.MONGODB_DATABASE
             });
 
