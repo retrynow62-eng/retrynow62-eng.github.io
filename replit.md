@@ -14,7 +14,7 @@ The project uses Node.js 22 because the `isolated-vm` dependency does not compil
 
 The application requires `MONGODB_URL` to contain a complete MongoDB connection URI beginning with `mongodb://` or `mongodb+srv://`. Store it as a Replit Secret. Redis, Meilisearch, and S3 are optional and are disabled in the current workflow.
 
-The frontend repository is downloaded into `frontend/` on first startup. The generated frontend directory must contain its `.git` metadata so the engine does not try to clone it again.
+The frontend repository is downloaded into `frontend/` on first startup. Replit imports do not preserve nested `.git` metadata, so startup uses `frontend/package.json` to detect an already-downloaded frontend.
 
 ## Current status
 
