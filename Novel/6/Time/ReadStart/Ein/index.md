@@ -1,3 +1,3 @@
 # 제1장
-* [개요](/6/Jikan/ReadStart/Itchi/StoryStart.md)
-* [물어시발기](/6/Jikan/ReadStart/Itchi/Prologue.md)
+* [개요](./2024/Novel/Time/ReadStart/Ein/StoryStart.md)
+* [프롤로그](./2024/Novel/Time//ReadStart/Ein/Prologue.md)
