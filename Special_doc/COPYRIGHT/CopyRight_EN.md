@@ -3,7 +3,7 @@ Wiki Site Copyrighted By
 * ParkSoYeon666(All Copyrights reserved on This Site)
 
 CNAME Hosting By
-* 내도메인.한국(All Copyrights reserved on http://alala.kro.kr/ Domain)
+* 내도메인.한국(All Copyrights reserved on http://retrynow.kro.kr/ Domain)
 
 There are pictures in the /images route.
 
